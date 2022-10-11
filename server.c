@@ -269,12 +269,55 @@ void *handle_client(void *arg)
     }
     else
     {
+      //Make two implementations to seee which one is the favorable when correcting the assignment
+      //1. Perfectly fine implementation for netcat and the clients where they can send messages back and forth.
+
+      /*
       char temp[255];
       memset(temp, 0, 255);
       memcpy(temp, &currentClient->message[4], sizeof(currentClient->message));
       memset(currentClient->message, 0, 255);
       sprintf(currentClient->message, "MSG %s %s", currentClient->name, temp);
       sendMessage(currentClient->message, currentClient->uid);
+      */
+
+      //2. If the message has more MSG inside of it, restructure the messages to be sent one after another and be accepted by the tests.
+
+      int nrOfNewlines = 0;
+      int posOfNewlines[3] = {0, 0, 0};
+      for(int i = 0; i < sizeof(currentClient->message); i++)
+      {
+        if(currentClient->message[i] == '\n')
+        {
+          posOfNewlines[nrOfNewlines] = i;
+          nrOfNewlines++;
+        }
+      }
+
+      for(int i = 0; i < nrOfNewlines; i++)
+      {
+        if(nrOfNewlines == 1 || i == 0)
+        {
+          char temp[255];
+          memset(temp, 0, 255);
+          memcpy(temp, &currentClient->message[4], (size_t)(posOfNewlines[i] - 3));
+          char msg[300];
+          memset(msg, 0, 300);
+          sprintf(msg, "MSG %s %s", currentClient->name, temp);
+          sendMessage(msg, currentClient->uid);
+        }
+        else
+        {
+          char temp[255];
+          memset(temp, 0, 255);
+          memcpy(temp, &currentClient->message[posOfNewlines[i - 1] + 5], (size_t)(posOfNewlines[i] - posOfNewlines[i - 1] - 4));
+          char msg[300];
+          memset(msg, 0, 300);
+          sprintf(msg, "MSG %s %s", currentClient->name, temp);
+          sendMessage(msg, currentClient->uid);
+        }
+      }
+      memset(currentClient->message, 0, 255);
     }
   }
   close(currentClient->clientSock);

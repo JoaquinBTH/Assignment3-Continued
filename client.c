@@ -60,6 +60,81 @@ void recv_msg_handler(void *arg)
       }
       if (same == false)
       {
+        //Implementation for allowing the specific type of messages from the perl tests as well as any netcat or similar client messages to function properly!
+        int nrOfNewlines = 0;
+        int posOfNewlines[3] = {0, 0, 0};
+        for(int i = 0; i < sizeof(message); i++)
+        {
+          if(message[i] == '\n')
+          {
+            posOfNewlines[nrOfNewlines] = i;
+            nrOfNewlines++;
+          }
+        }
+
+        for(int i = 0; i < nrOfNewlines; i++)
+        {
+          if(nrOfNewlines == 1 || i == 0)
+          {
+            char messageWithoutMSG[255];
+            memset(messageWithoutMSG, 0, 255);
+            int spacesFound = 0;
+            for(int i = 0; i < ((int)strlen(message)); i++)
+            {
+              if(message[i] == ' ')
+              {
+                spacesFound++;
+                if(spacesFound == 2)
+                {
+                  messageWithoutMSG[(int)strlen(messageWithoutMSG)] = ':';
+                }
+              }
+
+              if(spacesFound > 0)
+              {
+                messageWithoutMSG[(int)strlen(messageWithoutMSG)] = message[i];
+              }
+            }
+            char temp[255];
+            memset(temp, 0, 255);
+            memcpy(temp, &messageWithoutMSG[1], (size_t)(posOfNewlines[0] - 2));
+            printf("%s", temp);
+            str_overwrite_stdout();
+          }
+          else
+          {
+            char temp[255];
+            memset(temp, 0, 255);
+            memcpy(temp, &message[posOfNewlines[i - 1]], (size_t)(posOfNewlines[i] - posOfNewlines[i - 1] + 1));
+            
+            char messageWithoutMSG[255];
+            memset(messageWithoutMSG, 0, 255);
+            int spacesFound = 0;
+            for(int i = 0; i < ((int)strlen(temp)); i++)
+            {
+              if(temp[i] == ' ')
+              {
+                spacesFound++;
+                if(spacesFound == 2)
+                {
+                  messageWithoutMSG[(int)strlen(messageWithoutMSG)] = ':';
+                }
+              }
+
+              if(spacesFound > 0)
+              {
+                messageWithoutMSG[(int)strlen(messageWithoutMSG)] = temp[i];
+              }
+            }
+            memcpy(messageWithoutMSG, &messageWithoutMSG[1], sizeof(messageWithoutMSG));
+            printf("%s", messageWithoutMSG);
+            str_overwrite_stdout();
+          }
+        }
+
+        //Perfectly fine implementation for catching netcat and similar client's messages
+
+        /*
         char messageWithoutMSG[255];
         memset(messageWithoutMSG, 0, 255);
         int spacesFound = 0;
@@ -82,6 +157,7 @@ void recv_msg_handler(void *arg)
         memcpy(messageWithoutMSG, &messageWithoutMSG[1], sizeof(messageWithoutMSG));
         printf("%s", messageWithoutMSG);
         str_overwrite_stdout();
+        */
       }
     }
   }
